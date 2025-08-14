@@ -144,8 +144,51 @@ async function load(){
     return;
   }
 
-  STATE.games = Array.isArray(data) ? data : [];
-  applyFiltersAndRender();
+// Sceglie la migliore sorgente immagine disponibile
+function resolveImage(g) {
+  // priorità: image_url -> bgg_thumb -> null
+  return (g.image_url && String(g.image_url).trim())
+      || (g.bgg_thumb && String(g.bgg_thumb).trim())
+      || null;
+}
+
+// Crea un placeholder SVG con l'iniziale del titolo
+function placeholderDataURI(title = "?") {
+  const letter = (title || "?").trim().charAt(0).toUpperCase();
+  const svg = `
+  <svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'>
+    <rect width='100%' height='100%' fill='#222'/>
+    <text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle'
+          font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif'
+          font-size='120' fill='#aaa'>${letter}</text>
+  </svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+
+// HTML della card con thumbnail in alto
+function cardHTML(g){
+  const img = resolveImage(g);
+  const meta = [];
+  if (g.players) meta.push(g.players);
+  if (Number.isFinite(g.time_minutes)) meta.push(`${g.time_minutes}’`);
+  if (Number.isFinite(g.min_age)) meta.push(`+${g.min_age}`);
+
+  const tags = Array.isArray(g.tags) ? g.tags : [];
+  const tagsHtml = tags.slice(0,6).map(t => `<span class="tag">#${t}</span>`).join("");
+
+  return `
+    <article class="card">
+      <div class="thumb" aria-hidden="true">
+        ${img
+          ? `<img src="${img}" alt="${(g.title || 'Gioco')}" loading="lazy">`
+          : `<div class="ph" aria-hidden="true">${(g.title||'?').charAt(0).toUpperCase()}</div>`
+        }
+      </div>
+      <h3>${g.title ?? "Senza titolo"}</h3>
+      ${meta.length ? `<div class="badges"><span class="badge">${meta.join(" • ")}</span></div>` : ""}
+      ${tagsHtml ? `<div class="tags">${tagsHtml}</div>` : ""}
+    </article>
+  `;
 }
 
 load();
