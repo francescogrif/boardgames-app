@@ -1,2 +1,2 @@
-window.SUPABASE_URL = "https://<IL-TUO-PROJECT-REF>.supabase.co";
-window.SUPABASE_ANON_KEY = "<LA-TUA-ANON-KEY>";
+window.SUPABASE_URL = "https://mgcdkrstkeitcrqrjkxh.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nY2RrcnN0a2VpdGNycXJqa3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxODM2NjAsImV4cCI6MjA3MDc1OTY2MH0.ezb6QBqU6OY_XN49uuDWzr8-_QXOp5JZ5ZFlQLzA6jE";
