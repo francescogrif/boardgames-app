@@ -149,5 +149,3 @@ async function load(){
 }
 
 load();
-
-
