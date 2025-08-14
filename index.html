@@ -8,13 +8,56 @@
 </head>
 <body>
   <main>
-    <h1>La mia collezione</h1>
-    <input id="search" placeholder="Cerca gioco..." />
-    <ul id="list" aria-live="polite"></ul>
+    <header class="header">
+      <h1>La mia collezione</h1>
+      <div class="meta"><span id="count">0</span> giochi</div>
+    </header>
+
+    <section class="filters">
+      <input id="search" class="input" placeholder="Cerca titolo / tag..." />
+
+      <div class="row">
+        <label class="field">
+          <span>Giocatori</span>
+          <select id="players" class="select">
+            <option value="">Tutti</option>
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option>
+            <option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Durata max</span>
+          <select id="maxTime" class="select">
+            <option value="">Nessun limite</option>
+            <option value="30">30’</option>
+            <option value="45">45’</option>
+            <option value="60">60’</option>
+            <option value="90">90’</option>
+            <option value="120">120’</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Ordina per</span>
+          <select id="sortBy" class="select">
+            <option value="title_asc">Titolo (A→Z)</option>
+            <option value="time_asc">Durata (cresc.)</option>
+            <option value="players_desc">Numero giocatori (decresc.)</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section id="grid" class="grid"></section>
     <p id="empty" hidden>Nessun gioco trovato.</p>
   </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-<script src="app.js"></script>
+
+  <!-- SDK Supabase + config + app -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
