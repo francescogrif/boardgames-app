@@ -1,8 +1,46 @@
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#0b0b0c;color:#f3f3f3}
-main{max-width:780px;margin:0 auto;padding:24px}
-h1{font-size:28px;margin:0 0 12px}
-#search{width:100%;padding:12px;border-radius:10px;border:1px solid #2a2a2d;background:#141417;color:#f3f3f3}
-#list{list-style:none;padding:0;margin:16px 0}
-#list li{padding:10px 8px;border-bottom:1px solid #242428;display:flex;justify-content:space-between;gap:12px}
-.badge{font-size:12px;opacity:.85}
-@media (prefers-color-scheme: light){body{background:#fff;color:#111}#search{background:#fff;color:#111;border-color:#ddd}#list li{border-bottom:1px solid #eee}}
+:root{
+  --bg:#0b0b0c; --fg:#f3f3f3; --muted:#a8a8ad; --line:#242428;
+  --card:#141417; --radius:14px;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#fff; --fg:#111; --muted:#555; --line:#eee; --card:#fff; }
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--fg)}
+
+main{max-width:980px;margin:0 auto;padding:24px}
+.header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+h1{font-size:28px;margin:0}
+.meta{color:var(--muted);font-size:14px}
+
+.filters{display:flex;flex-direction:column;gap:12px;margin:10px 0 16px}
+.row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:720px){ .row{grid-template-columns:1fr 1fr} }
+@media (max-width:520px){ .row{grid-template-columns:1fr} }
+
+.input,.select{
+  width:100%; padding:12px 12px; border-radius:12px;
+  border:1px solid var(--line); background:var(--card); color:var(--fg);
+}
+.field{display:flex;flex-direction:column;gap:6px;font-size:14px}
+
+.grid{
+  display:grid; gap:12px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+@media (max-width:980px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:580px){ .grid{grid-template-columns:1fr} }
+
+.card{
+  border:1px solid var(--line); border-radius:var(--radius); background:var(--card);
+  padding:14px; display:flex; flex-direction:column; gap:10px;
+}
+.card h3{margin:0; font-size:18px}
+.badges{display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); font-size:13px}
+.badge{padding:4px 8px; border-radius:999px; border:1px solid var(--line)}
+.tags{display:flex; gap:6px; flex-wrap:wrap}
+.tag{font-size:12px; color:var(--muted); border:1px dashed var(--line); padding:2px 6px; border-radius:999px}
+
+#empty{margin:16px 0; color:var(--muted)}
