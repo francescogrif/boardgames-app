@@ -1,184 +1,161 @@
-// Inizializza Supabase (richiede SDK + config.js in index.html)
-const supabase = window.supabase.createClient(
-  window.SUPABASE_URL,
-  window.SUPABASE_ANON_KEY
-);
+// ===== Helpers =====
+const $ = (sel) => document.querySelector(sel);
+const grid = $('#grid');
+const modal = $('#gameModal');
+$('#mClose').onclick = () => modal.close();
 
-let STATE = {
-  games: [],
-  filterText: "",
-  playersEq: "",      // numero giocatori esatto richiesto
-  maxTime: "",        // durata massima in minuti
-  sortBy: "title_asc" // title_asc | time_asc | players_desc
+const state = {
+  all: [],
+  q: '', genre: '', players: '', duration: '', complexity: '',
+  sort: 'rating-desc',
 };
 
-// Parsing helper: "2-5" -> {min:2, max:5}
-function parsePlayersRange(str){
-  if(!str) return {min:null, max:null};
-  const m = String(str).match(/(\d+)\s*[-–]\s*(\d+)/);
-  if(m) return {min:+m[1], max:+m[2]};
-  const n = parseInt(str,10);
-  return Number.isFinite(n) ? {min:n, max:n} : {min:null, max:null};
+// Prova a mappare diversi schemi verso un formato canonico
+function mapGame(g){
+  const title = g.title || g.name || g.titolo || 'Senza titolo';
+  const cover = g.cover || g.image || g.img || g.cover_url || '';
+  // players
+  let pmin = g.players_min ?? g.minPlayers ?? g.min_players ?? null;
+  let pmax = g.players_max ?? g.maxPlayers ?? g.max_players ?? null;
+  if(!pmin && !pmax && typeof g.players === 'string'){
+    const m = g.players.match(/(\d+)\D+(\d+)/); if(m){ pmin=+m[1]; pmax=+m[2]; }
+  }
+  // durata
+  let dmin = g.duration_min ?? g.minDuration ?? g.duration ?? null;
+  let dmax = g.duration_max ?? g.maxDuration ?? null;
+  // complessità (BGG weight 1-5)
+  let weight = g.complexity ?? g.weight ?? g.difficulty ?? null;
+  if (weight && weight > 5) weight = (weight/10)*5; // se arrivasse 0-10
+  // rating BGG 0-10
+  const rating = g.bgg_rating ?? g.rating ?? g.vote ?? null;
+  // genere/i
+  const genre = Array.isArray(g.genre) ? g.genre
+               : (g.genres || g.tags || g.tipo ? (g.genres||g.tags||g.tipo) : [])
+  const genreArr = Array.isArray(genre) ? genre : (typeof genre === 'string' ? genre.split(',').map(s=>s.trim()) : []);
+
+  return {
+    id: g.id ?? g.bgg_id ?? crypto.randomUUID(),
+    title, cover,
+    players: {min:pmin, max:pmax},
+    duration: {min:dmin, max:dmax},
+    weight, rating,
+    genre: genreArr,
+    desc: g.description || g.desc || '',
+    bgg_url: g.bgg_url || (g.bgg_id ? `https://boardgamegeek.com/boardgame/${g.bgg_id}` : null),
+    rules_url: g.rules_url || g.rules || null
+  };
 }
 
-// Calcola “capienza giocatori” massima (per ordinamento players_desc)
-function playersCapacity(str){
-  const {min, max} = parsePlayersRange(str);
-  if(Number.isFinite(max)) return max;
-  if(Number.isFinite(min)) return min;
-  return 0;
-}
+function badge(text, cls=''){ return `<span class="badge ${cls}">${text}</span>` }
 
-/* =========================
-   IMMAGINI: helpers + card
-   ========================= */
-
-// Sceglie la migliore sorgente immagine disponibile
-function resolveImage(g) {
-  // priorità: image_url -> bgg_thumb -> null
-  return (g.image_url && String(g.image_url).trim())
-      || (g.bgg_thumb && String(g.bgg_thumb).trim())
-      || null;
-}
-
-// Crea un placeholder SVG con l'iniziale del titolo
-function placeholderDataURI(title = "?") {
-  const letter = (title || "?").trim().charAt(0).toUpperCase();
-  const svg = `
-  <svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'>
-    <rect width='100%' height='100%' fill='#222'/>
-    <text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle'
-          font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif'
-          font-size='120' fill='#aaa'>${letter}</text>
-  </svg>`;
-  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-}
-
-// ⚠️ UNICA cardHTML globale usata dal renderer
-function cardHTML(g){
-  const img = resolveImage(g);
-  const meta = [];
-  if (g.players) meta.push(g.players);
-  if (Number.isFinite(g.time_minutes)) meta.push(`${g.time_minutes}’`);
-  if (Number.isFinite(g.min_age)) meta.push(`+${g.min_age}`);
-
-  const tags = Array.isArray(g.tags) ? g.tags : [];
-  const tagsHtml = tags.slice(0,6).map(t => `<span class="tag">#${t}</span>`).join("");
+function renderCard(game){
+  const p = game.players;
+  const d = game.duration;
+  const meta = [
+    p.min?`${p.min}${p.max?`–${p.max}`:''}p`:'—p',
+    d.min?`${d.min}${d.max?`–${d.max}`:''}′`:'—′',
+    game.weight?`Diff ${(+game.weight).toFixed(1)}`:'—',
+  ].map(v=>badge(v)).join('');
+  const tags = (game.genre||[]).slice(0,3).map(t=>badge(t)).join('');
 
   return `
-    <article class="card">
-      <div class="thumb" aria-hidden="true">
-        ${img
-          ? `<img src="${img}" alt="${(g.title || 'Gioco')}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;ph&quot; aria-hidden=&quot;true&quot;>${(g.title||'?').charAt(0).toUpperCase()}</div>';">`
-          : `<div class="ph" aria-hidden="true">${(g.title||'?').charAt(0).toUpperCase()}</div>`
-        }
+  <article class="card" data-id="${game.id}">
+    <div class="card__cover" style="background-image:url('${game.cover||''}');"></div>
+    <div class="card__body">
+      <h3 class="card__title">${game.title}</h3>
+      <div class="meta">${meta} ${game.rating?badge(`BGG ${(+game.rating).toFixed(1)}`,'rating'):''}
+        ${game.weight?badge(`${(+game.weight).toFixed(1)}`,'weight'):''}
       </div>
-      <h3>${g.title ?? "Senza titolo"}</h3>
-      ${meta.length ? `<div class="badges"><span class="badge">${meta.join(" • ")}</span></div>` : ""}
-      ${tagsHtml ? `<div class="tags">${tagsHtml}</div>` : ""}
-    </article>
-  `;
+      <div class="meta">${tags}</div>
+    </div>
+    <div class="card__actions">
+      <button class="link js-open">Scheda</button>
+      ${game.rules_url ? `<a class="link" href="${game.rules_url}" target="_blank" rel="noopener">Regole</a>`:''}
+    </div>
+  </article>`
 }
 
-/* ================ */
-function applyFiltersAndRender(){
-  const grid = document.getElementById("grid");
-  const empty = document.getElementById("empty");
-  const count = document.getElementById("count");
-
-  const f = STATE.filterText.toLowerCase().trim();
-  const wantPlayers = STATE.playersEq ? parseInt(STATE.playersEq,10) : null;
-  const wantMaxTime = STATE.maxTime ? parseInt(STATE.maxTime,10) : null;
-
-  let list = STATE.games.filter(g => {
-    // filtro testuale su title/players/tags
-    const hay = [
-      (g.title||""),
-      (g.players||""),
-      (Array.isArray(g.tags) ? g.tags.join(" ") : "")
-    ].join(" ").toLowerCase();
-
-    if (f && !hay.includes(f)) return false;
-
-    // filtro per numero giocatori: il valore scelto deve ricadere nel range del gioco
-    if (Number.isFinite(wantPlayers)) {
-      const {min, max} = parsePlayersRange(g.players);
-      const ok = (Number.isFinite(min) && Number.isFinite(max))
-        ? (wantPlayers >= min && wantPlayers <= max)
-        : (Number.isFinite(min) ? wantPlayers === min : true);
-      if (!ok) return false;
-    }
-
-    // filtro durata massima
-    if (Number.isFinite(wantMaxTime) && Number.isFinite(g.time_minutes)) {
-      if (g.time_minutes > wantMaxTime) return false;
-    }
-
-    return true;
-  });
-
-  // ordinamento
-  list.sort((a,b)=>{
-    if (STATE.sortBy === "time_asc") {
-      const ta = Number.isFinite(a.time_minutes) ? a.time_minutes : 9999;
-      const tb = Number.isFinite(b.time_minutes) ? b.time_minutes : 9999;
-      return ta - tb;
-    }
-    if (STATE.sortBy === "players_desc") {
-      return playersCapacity(b.players) - playersCapacity(a.players);
-    }
-    // default: titolo A→Z
-    return (a.title||"").localeCompare(b.title||"");
-  });
-
-  // render
-  grid.innerHTML = list.map(cardHTML).join("");
-  empty.hidden = list.length > 0;
-  count.textContent = String(list.length);
+function openModal(game){
+  $('#mTitle').textContent = game.title;
+  $('#mCover').style.backgroundImage = `url('${game.cover||''}')`;
+  $('#mMeta').innerHTML = [
+    game.players.min?badge(`${game.players.min}${game.players.max?`–${game.players.max}`:''} giocatori`):'',
+    game.duration.min?badge(`${game.duration.min}${game.duration.max?`–${game.duration.max}`:''} minuti`):'',
+    game.rating?badge(`Voto BGG ${(+game.rating).toFixed(1)}`,'rating'):'',
+    game.weight?badge(`Difficoltà ${(+game.weight).toFixed(1)}`,'weight'):'',
+    ...(game.genre||[]).slice(0,5).map(t=>badge(t))
+  ].join('');
+  $('#mDesc').textContent = game.desc || '—';
+  const bgg = $('#mBgg'); const rules = $('#mRules');
+  if(game.bgg_url){ bgg.href = game.bgg_url; bgg.style.display='inline-flex'; } else { bgg.style.display='none'; }
+  if(game.rules_url){ rules.href = game.rules_url; rules.style.display='inline-flex'; } else { rules.style.display='none'; }
+  modal.showModal();
 }
 
-function wireUI(){
-  const search = document.getElementById("search");
-  const players = document.getElementById("players");
-  const maxTime = document.getElementById("maxTime");
-  const sortBy = document.getElementById("sortBy");
-
-  search.addEventListener("input", e => {
-    STATE.filterText = e.target.value;
-    applyFiltersAndRender();
-  });
-  players.addEventListener("change", e => {
-    STATE.playersEq = e.target.value;
-    applyFiltersAndRender();
-  });
-  maxTime.addEventListener("change", e => {
-    STATE.maxTime = e.target.value;
-    applyFiltersAndRender();
-  });
-  sortBy.addEventListener("change", e => {
-    STATE.sortBy = e.target.value;
-    applyFiltersAndRender();
+function applyFilters(list){
+  const q = state.q.toLowerCase();
+  return list.filter(g=>{
+    const matchesQ = !q || g.title.toLowerCase().includes(q) || (g.genre||[]).some(t=>t.toLowerCase().includes(q));
+    const matchesGenre = !state.genre || (g.genre||[]).map(x=>x.toLowerCase()).includes(state.genre.toLowerCase());
+    const matchesPlayers = !state.players || (g.players.min && g.players.min <= +state.players);
+    const maxDur = +state.duration || Infinity;
+    const durVal = g.duration.min || g.duration.max || Infinity;
+    const matchesDuration = !state.duration || (durVal <= maxDur);
+    const maxW = [null,1.5,2.5,3.5,4.5][+state.complexity||0] ?? null;
+    const matchesComplexity = !state.complexity || (g.weight && g.weight <= maxW);
+    return matchesQ && matchesGenre && matchesPlayers && matchesDuration && matchesComplexity;
   });
 }
 
-async function load(){
-  wireUI();
-
-  const { data, error } = await supabase
-    .from("games")
-    .select("*")
-    .order("title", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    document.getElementById("empty").hidden = false;
-    document.getElementById("empty").textContent = "Errore nel caricamento dei dati.";
-    return;
-  }
-
-  STATE.games = Array.isArray(data) ? data : [];
-  applyFiltersAndRender();
+function applySort(list){
+  const [key,dir] = state.sort.split('-');
+  const m = (g)=>({
+    'rating': g.rating ?? -Infinity,
+    'title': (g.title||'').toLowerCase(),
+    'duration': g.duration.min ?? g.duration.max ?? Infinity,
+    'complexity': g.weight ?? Infinity,
+  }[key]);
+  return list.slice().sort((a,b)=>{
+    const va=m(a), vb=m(b);
+    if(va<vb) return (dir==='asc'?-1:1);
+    if(va>vb) return (dir==='asc'?1:-1);
+    return 0;
+  });
 }
 
-load();
+function render(list){
+  grid.innerHTML = list.map(renderCard).join('');
+  grid.querySelectorAll('.js-open').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const id = e.currentTarget.closest('.card').dataset.id;
+      const game = state.all.find(x=>x.id===id);
+      if(game) openModal(game);
+    });
+  });
+}
 
+// ===== Init =====
+async function boot(){
+  const res = await fetch('games.json');
+  const raw = await res.json();
+  state.all = (Array.isArray(raw)?raw:(raw.games||[])).map(mapGame);
+  update();
+
+  // events
+  $('#q').addEventListener('input', e=>{ state.q = e.target.value; update() });
+  $('#genre').addEventListener('change', e=>{ state.genre = e.target.value; update() });
+  $('#players').addEventListener('change', e=>{ state.players = e.target.value; update() });
+  $('#duration').addEventListener('change', e=>{ state.duration = e.target.value; update() });
+  $('#complexity').addEventListener('change', e=>{ state.complexity = e.target.value; update() });
+  $('#sort').addEventListener('change', e=>{ state.sort = e.target.value; update() });
+}
+
+function update(){
+  const filtered = applyFilters(state.all);
+  const sorted = applySort(filtered);
+  render(sorted);
+}
+
+boot().catch(err=>{
+  grid.innerHTML = `<div class="small">Errore nel caricamento dei dati: ${err?.message||err}</div>`;
+});
