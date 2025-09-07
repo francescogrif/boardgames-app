@@ -266,13 +266,22 @@ async function boot() {
   const complexity = $('#complexity'), sort = $('#sort');
 
   // Search & Clear
-  if (q) q.addEventListener('input', (e) => { state.q = e.target.value; update(); });
+if (qClear) qClear.hidden = !q?.value;
+  if (q && qClear) q.addEventListener('input', (e) => {
+    state.q = e.target.value;
+    qClear.hidden = !e.target.value;
+    update();
+  });
   if (qClear) qClear.addEventListener('click', (e) => {
     e.preventDefault();
     if (!q) return;
-    q.value = ''; state.q = ''; update(); q.focus();
-  });
 
+  });
+ q.value = '';
+    state.q = '';
+    qClear.hidden = true;
+    update();
+    q.focus();
   // Filters
   genre?.addEventListener('change', (e) => { state.genre = e.target.value; update(); });
   players?.addEventListener('change', (e) => { state.players = e.target.value; update(); });
