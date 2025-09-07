@@ -193,6 +193,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 .searchwrap{
   position:relative;
   min-width:0;
+  midth:100%;
 }
 .searchwrap .icon{
   position:absolute;
@@ -205,6 +206,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 }
 .searchwrap .input{
   padding-left:36px;
+  width:100%;
   padding-right:36px;
 }
 .searchwrap .clear{
