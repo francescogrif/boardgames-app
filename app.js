@@ -150,6 +150,11 @@ async function boot(){
   $('#duration').addEventListener('change', e=>{ state.duration = e.target.value; update() });
   $('#complexity').addEventListener('change', e=>{ state.complexity = e.target.value; update() });
   $('#sort').addEventListener('change', e=>{ state.sort = e.target.value; update() });
+  $('#q').addEventListener('input', debounce(e=>{ state.q = e.target.value; update() }, 160));
+  $('#qClear').addEventListener('click', ()=>{
+    $('#q').value = ''; state.q=''; update(); $('#q').focus();
+  });
+
 }
 
 function update(){
