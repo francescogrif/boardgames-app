@@ -9,6 +9,8 @@ const state = {
   q: '', genre: '', players: '', duration: '', complexity: '',
   sort: 'rating-desc',
 };
+const debounce = (fn, ms=180) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); } };
+
 
 // Prova a mappare diversi schemi verso un formato canonico
 function mapGame(g){
