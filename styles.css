@@ -47,13 +47,45 @@ a{color:inherit}
 
 .container{max-width:var(--container);margin:auto;padding:18px}
 
-/* Toolbar (search + filtri + sort) */
-.toolbar{display:grid;grid-template-columns:1fr auto;gap:10px;margin:8px 0 16px}
-@media (max-width:720px){
-  .toolbar{grid-template-columns:1fr;gap:12px}
-  .filters{overflow:auto;white-space:nowrap;padding-bottom:2px}
-  .filters > *{min-width:140px} /* each select facilmente tappabile */
+/* ===== Toolbar (search + filtri + sort) =====
+   Forziamo 2 righe SEMPRE: ricerca in alto (1fr), filtri sotto */
+.toolbar{
+  display:grid;
+  grid-template-columns: 1fr;   /* una colonna: evita overflow su desktop */
+  row-gap: 12px;
+  margin:8px 0 16px;
 }
+
+/* Filtri a capo quando serve, con spaziature uniformi */
+.filters{
+  display:flex;
+  flex-wrap:wrap;               /* va a capo su desktop e mobile */
+  gap:8px;
+  align-items:center;
+}
+
+/* stile coerente per input/select dei filtri */
+select{
+  background:var(--surface);
+  border:1px solid color-mix(in oklab, var(--text) 12%, transparent);
+  color:var(--text);
+  border-radius:12px;
+  height:44px;
+  padding:0 12px;
+  appearance:none;
+}
+select:focus{
+  outline:none;
+  border-color:var(--primary);
+  box-shadow:0 0 0 2px color-mix(in oklab,var(--primary) 28%, transparent);
+}
+
+@media (max-width:720px){
+  /* su mobile restano due righe; nessuno scroll orizzontale */
+  .filters{gap:8px}
+}
+
+/* ===== Campo ricerca ===== */
 .input{
   background:var(--surface);
   border:1px solid color-mix(in oklab, var(--text) 12%, transparent);
@@ -71,11 +103,13 @@ a{color:inherit}
   border-color:var(--primary);
   box-shadow:0 0 0 2px color-mix(in oklab,var(--primary) 28%, transparent); /* più sottile */
 }
+
+/* Chip e bottoni generici */
 .chip{background:var(--surface-2);border:1px solid color-mix(in oklab, var(--text) 10%, transparent);padding:8px 10px;border-radius:999px;font-size:.9rem}
 .btn{background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;box-shadow:var(--shadow)}
 .btn:active{transform:translateY(1px)}
 
-/* Grid cards */
+/* ===== Grid cards ===== */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--gap)}
 .card{
   background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column
@@ -91,7 +125,7 @@ a{color:inherit}
 .card__actions{display:flex;gap:8px;padding:12px}
 .link{flex:1;text-align:center;border:1px solid color-mix(in oklab,var(--text) 15%, transparent);border-radius:12px;padding:10px;cursor:pointer;background:var(--surface-2)}
 
-/* Modal scheda (native <dialog>) */
+/* ===== Modal scheda (native <dialog>) ===== */
 dialog{border:none;border-radius:18px;background:var(--surface);color:var(--text);box-shadow:var(--shadow);max-width:860px;width:96%}
 dialog::backdrop{background:rgba(0,0,0,.55)}
 .modal__header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid color-mix(in oklab,var(--text) 12%, transparent)}
@@ -100,53 +134,31 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 .close{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--muted)}
 .small{font-size:.86rem;color:var(--muted)}
 
-/* wrapper con icona e bottone clear */
-.searchwrap{
-  position:relative;
-}
+/* ===== Ricerca: wrapper con icona e bottone clear ===== */
+.searchwrap{ position:relative; }
 .searchwrap .icon{
-  position:absolute;
-  left:10px;
-  top:50%;
-  /* allineamento con transform, non con translate */
+  position:absolute; left:10px; top:50%;
   transform: translateY(-50%);
-  font-size:18px;
-  opacity:.6;
-  pointer-events:none;
+  font-size:18px; opacity:.6; pointer-events:none;
 }
-.searchwrap .input{
-  padding-left:36px;
-  padding-right:36px;
-}
+.searchwrap .input{ padding-left:36px; padding-right:36px; }
 
 /* bottone X */
 .searchwrap .clear{
-  position:absolute;
-  right:6px;
-  top:50%;
-  /* allineamento con transform; evita conflitti con :active */
-  transform: translateY(-50%);
-  width:32px;
-  height:32px;
-  border-radius:999px;
-  border:none;
-  background:transparent;               /* niente blu */
-  color:var(--muted);
-  cursor:pointer;
+  position:absolute; right:6px; top:50%;
+  transform: translateY(-50%);                /* sempre centrato */
+  width:32px; height:32px; border-radius:999px; border:none;
+  background:transparent; color:var(--muted); cursor:pointer;
   -webkit-tap-highlight-color: color-mix(in oklab, var(--primary) 20%, transparent);
-  outline: none;
+  outline:none;
   transition: color var(--trans), transform var(--trans), box-shadow var(--trans), background-color var(--trans);
 }
-
-/* hover/focus: usa la palette */
 .searchwrap .clear:hover,
 .searchwrap .clear:focus-visible{
   color:var(--primary);
-  box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 15%, transparent);
-  border-radius: 999px;
+  box-shadow:0 0 0 6px color-mix(in oklab, var(--primary) 15%, transparent);
+  border-radius:999px;
 }
-
-/* active: mantiene la traduzione e aggiunge scala + leggero tint di sfondo in palette */
 .searchwrap .clear:active{
   transform: translateY(-50%) scale(0.9);
   background-color: color-mix(in oklab, var(--primary) 12%, transparent);
