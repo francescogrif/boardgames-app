@@ -99,6 +99,7 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 @media (max-width:860px){.modal__body{grid-template-columns:1fr}}
 .close{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--muted)}
 .small{font-size:.86rem;color:var(--muted)}
+
 /* wrapper con icona e bottone clear */
 .searchwrap{
   position:relative;
@@ -107,7 +108,8 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
   position:absolute;
   left:10px;
   top:50%;
-  translate:0 -50%;
+  /* allineamento con transform, non con translate */
+  transform: translateY(-50%);
   font-size:18px;
   opacity:.6;
   pointer-events:none;
@@ -122,26 +124,30 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
   position:absolute;
   right:6px;
   top:50%;
-  translate:0 -50%;
+  /* allineamento con transform; evita conflitti con :active */
+  transform: translateY(-50%);
   width:32px;
   height:32px;
   border-radius:999px;
   border:none;
-  background:transparent;
+  background:transparent;               /* niente blu */
   color:var(--muted);
   cursor:pointer;
-  /* transizioni fluide su colore e scala */
-  transition: color var(--trans), transform var(--trans);
+  -webkit-tap-highlight-color: color-mix(in oklab, var(--primary) 20%, transparent);
+  outline: none;
+  transition: color var(--trans), transform var(--trans), box-shadow var(--trans), background-color var(--trans);
 }
 
-/* quando il mouse passa sopra (o quando viene tappata su mobile) cambia colore */
-.searchwrap .clear:hover{
+/* hover/focus: usa la palette */
+.searchwrap .clear:hover,
+.searchwrap .clear:focus-visible{
   color:var(--primary);
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 15%, transparent);
+  border-radius: 999px;
 }
 
-/* durante il click: rimpicciolisce leggermente ma non si sposta */
+/* active: mantiene la traduzione e aggiunge scala + leggero tint di sfondo in palette */
 .searchwrap .clear:active{
-  transform:scale(0.85);
+  transform: translateY(-50%) scale(0.9);
+  background-color: color-mix(in oklab, var(--primary) 12%, transparent);
 }
-
-
