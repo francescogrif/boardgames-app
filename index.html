@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Boardgames</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>La mia collezione di giochi</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,13 +20,13 @@
   <main class="container">
     <!-- Toolbar -->
     <div class="toolbar">
-      <!-- ricerca -->
       <div class="searchwrap">
-        <span class="icon">🔍</span>
+        <span class="icon">🔎</span>
         <input id="q" class="input" placeholder="Cerca titolo o genere…" aria-label="Cerca titolo o genere">
-        <!-- pulsante clear con id corretto -->
-        <button id="qClear" class="clear" type="button" aria-label="Pulisci ricerca">×</button>
+        <!-- type=button per evitare submit implicito -->
+        <button id="qClear" class="clear" type="button" aria-label="Pulisci ricerca">✕</button>
       </div>
+
       <div class="filters">
         <select id="genre">
           <option value="">Genere</option>
@@ -61,11 +61,11 @@
       </div>
     </div>
 
-    <!-- griglia dei giochi -->
+    <!-- Grid -->
     <section id="grid" class="grid" aria-live="polite"></section>
   </main>
 
-  <!-- Modal per la scheda dettagli -->
+  <!-- Modal scheda -->
   <dialog id="gameModal">
     <div class="modal__header">
       <strong id="mTitle"></strong>
@@ -84,9 +84,7 @@
     </div>
   </dialog>
 
-  <!-- versioning per forzare il refresh dello script -->
-  <script src="app.js?v=2"></script>
+  <!-- cache-busting per evitare JS vecchio -->
+  <script src="app.js?v=3"></script>
 </body>
 </html>
-
-
