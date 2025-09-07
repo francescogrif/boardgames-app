@@ -20,7 +20,6 @@ const toInt = (v) => {
   const x = n(v);
   return Number.isFinite(x) ? Math.trunc(x) : null;
 };
-const clamp01 = (x) => (x == null ? null : Math.max(0, Math.min(1, x)));
 const asPlayersText = (min, max) => {
   if (!min && !max) return null;
   if (min && max) return `${min}–${max}`;
@@ -30,9 +29,41 @@ const asTags = (val) =>
   Array.isArray(val) ? val :
   typeof val === 'string' ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-// ===== Mapping: input -> UI + riga Supabase =====
-function mapGame(g) {
-  // Titolo / cover
+// ===== Mapping (DB row -> UI) =====
+function mapFromDbRow(row) {
+  // players in tabella è testo tipo "2–5" o "2-5"
+  let pmin = null, pmax = null;
+  if (row.players && typeof row.players === 'string') {
+    const m = row.players.match(/(\d+)\D+(\d+)/);
+    if (m) { pmin = +m[1]; pmax = +m[2]; }
+    else {
+      const one = row.players.match(/(\d+)/);
+      if (one) pmin = +one[1];
+    }
+  }
+
+  // durata: in tabella abbiamo time_minutes (int)
+  const dmin = null;
+  const dmax = row.time_minutes ?? null;
+
+  return {
+    id: row.id,
+    title: row.title || 'Senza titolo',
+    cover: row.image_url || row.bgg_thumb || '',
+    players: { min: pmin, max: pmax },
+    duration: { min: dmin, max: dmax },
+    weight: row.weight ?? null,
+    rating: null,            // non presente in tabella, opzionale in futuro
+    genre: row.tags || [],
+    desc: '',                // opzionale
+    bgg_url: row.bgg_url || null,
+    rules_url: null,
+    _row: row
+  };
+}
+
+// ===== Mapping (JSON -> UI + DB row) =====
+function mapFromJson(g) {
   const title = g.title || g.name || g.titolo || 'Senza titolo';
   const image_url = g.image_url || g.cover || g.img || g.cover_url || g.image || '';
   const bggIdRaw = g.bgg_id ?? g.id ?? null;
@@ -40,7 +71,7 @@ function mapGame(g) {
   const bgg_url = g.bgg_url || (bgg_id ? `https://boardgamegeek.com/boardgame/${bgg_id}` : null);
   const bgg_thumb = g.bgg_thumb || image_url || null;
 
-  // Players: prova varie chiavi e fallback parsing stringa "2-5"
+  // players
   let pmin = g.players_min ?? g.minPlayers ?? g.min_players ?? null;
   let pmax = g.players_max ?? g.maxPlayers ?? g.max_players ?? null;
   if (!pmin && !pmax && typeof g.players === 'string') {
@@ -49,45 +80,40 @@ function mapGame(g) {
   }
   const playersTxt = asPlayersText(pmin, pmax);
 
-  // Durata: scegliamo la durata “tipica”: preferisci max se presente, altrimenti min
+  // durata
   const dmin = g.duration_min ?? g.minDuration ?? g.min_duration ?? g.duration ?? null;
   const dmax = g.duration_max ?? g.maxDuration ?? g.max_duration ?? null;
   const time_minutes = toInt(dmax ?? dmin ?? null);
 
-  // Età minima
+  // età minima
   const min_age = toInt(g.min_age ?? g.age ?? g.minAge);
 
-  // Complessità (BGG weight 1–5)
+  // complessità
   let weight = g.weight ?? g.complexity ?? g.difficulty ?? null;
   if (weight && weight > 5) weight = (weight / 10) * 5;
 
-  // Rating BGG (non è in tabella, lo teniamo solo per la UI)
+  // rating (solo UI)
   const rating = g.bgg_rating ?? g.rating ?? g.vote ?? null;
 
-  // Tag / generi
+  // tag
   const tags = asTags(g.tags || g.genres || g.genre || g.tipo);
 
-  // Descrizione
-  const description = g.description || g.desc || '';
-
-  // Riga tabellare per Supabase (schema esatto)
   const row = {
-    id: g.uuid || crypto.randomUUID(),  // uuid locale se non presente
+    id: g.uuid || crypto.randomUUID(),
     title: title ?? null,
-    players: playersTxt,                // es. "2–5"
-    time_minutes: time_minutes,         // int
-    min_age: min_age,                   // int
-    weight: n(weight),                  // numeric(…)
+    players: playersTxt,
+    time_minutes: time_minutes,
+    min_age: min_age,
+    weight: n(weight),
     image_url: image_url || null,
-    tags: tags,                         // text[]
-    bgg_id: bgg_id,                     // int
+    tags: tags,
+    bgg_id: bgg_id,
     bgg_url: bgg_url || null,
     bgg_thumb: bgg_thumb || null,
-    last_bgg_sync: null,                // lo popolerai lato backend
-    sync_status: null                   // es. "ok" / "pending" / "error"
+    last_bgg_sync: null,
+    sync_status: null
   };
 
-  // Oggetto UI (come il resto dell'app si aspetta)
   return {
     id: row.id,
     title: row.title,
@@ -97,13 +123,14 @@ function mapGame(g) {
     weight: row.weight,
     rating: rating,
     genre: row.tags,
-    desc: description,
+    desc: g.description || g.desc || '',
     bgg_url: row.bgg_url,
     rules_url: g.rules_url || g.rules || null,
     _row: row
   };
 }
 
+// ===== UI bits =====
 function badge(text, cls = '') {
   return `<span class="badge ${cls}">${text}</span>`;
 }
@@ -163,6 +190,7 @@ function openModal(game) {
   modal.showModal();
 }
 
+// ===== Filters & sort =====
 function applyFilters(list) {
   const q = (state.q || '').toLowerCase();
   return list.filter((g) => {
@@ -211,9 +239,28 @@ function render(list) {
   });
 }
 
+// ===== Data loading =====
+async function loadFromSupabase() {
+  if (!window.DB?.sb) return { rows: [], error: new Error('Supabase non inizializzato') };
+  const { sb, tables } = window.DB;
+  const { data, error } = await sb
+    .from(tables.games)
+    .select('*')
+    .order('title', { ascending: true });
+  return { rows: data || [], error };
+}
+
+async function loadFromJson() {
+  const res = await fetch('games.json', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const raw = await res.json();
+  const arr = (Array.isArray(raw) ? raw : (raw.games || [])).map(mapFromJson);
+  return arr;
+}
+
 // ===== Init =====
 async function boot() {
-  // El. UI
+  // UI refs
   const q = $('#q'), qClear = $('#qClear');
   const genre = $('#genre'), players = $('#players'), duration = $('#duration');
   const complexity = $('#complexity'), sort = $('#sort');
@@ -233,15 +280,23 @@ async function boot() {
   complexity?.addEventListener('change', (e) => { state.complexity = e.target.value; update(); });
   sort?.addEventListener('change', (e) => { state.sort = e.target.value; update(); });
 
-  // Dati locali
+  // Data: Supabase first, fallback JSON
   try {
-    const res = await fetch('games.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw = await res.json();
-    state.all = (Array.isArray(raw) ? raw : (raw.games || [])).map(mapGame);
+    const { rows, error } = await loadFromSupabase();
+    if (error) console.warn('[supabase] select error:', error.message);
+    if (rows && rows.length) {
+      state.all = rows.map(mapFromDbRow);
+    } else {
+      // fallback locale
+      state.all = await loadFromJson();
+    }
   } catch (err) {
     console.error(err);
-    grid.innerHTML = `<div class="small">Errore nel caricamento dei dati: ${err?.message || err}</div>`;
+    try {
+      state.all = await loadFromJson();
+    } catch (err2) {
+      grid.innerHTML = `<div class="small">Errore nel caricamento dei dati: ${err2?.message || err2}</div>`;
+    }
   }
 
   update();
@@ -254,3 +309,13 @@ function update() {
 }
 
 boot();
+
+/* ===== Upsert pronto per il prossimo step (non usato ancora in UI) =====
+async function upsertGameRow(row) {
+  if (!window.DB?.sb) throw new Error('Supabase non inizializzato');
+  const { sb, tables } = window.DB;
+  const { data, error } = await sb.from(tables.games).upsert(row, { onConflict: 'id' }).select();
+  if (error) throw error;
+  return data;
+}
+*/
