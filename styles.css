@@ -49,12 +49,28 @@ a{color:inherit}
 
 /* Toolbar (search + filtri + sort) */
 .toolbar{display:grid;grid-template-columns:1fr auto;gap:10px;margin:8px 0 16px}
-.filters{display:flex;flex-wrap:wrap;gap:8px}
-.input, select{
-  background:var(--surface);border:1px solid color-mix(in oklab, var(--text) 12%, transparent);
-  padding:10px 12px;border-radius:12px;transition:border var(--trans), box-shadow var(--trans);color:var(--text)
+@media (max-width:720px){
+  .toolbar{grid-template-columns:1fr;gap:12px}
+  .filters{overflow:auto;white-space:nowrap;padding-bottom:2px}
+  .filters > *{min-width:140px} /* each select facilmente tappabile */
 }
-.input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklab,var(--primary) 30%, transparent)}
+.input{
+  background:var(--surface);
+  border:1px solid color-mix(in oklab, var(--text) 12%, transparent);
+  padding:10px 12px;
+  height:44px;                 /* fisso, comodo al tatto */
+  border-radius:12px;
+  transition:border var(--trans), box-shadow var(--trans);
+  color:var(--text);
+  width:100%;
+  appearance:none;
+}
+.input::placeholder{color:var(--muted)}
+.input:focus{
+  outline:none;
+  border-color:var(--primary);
+  box-shadow:0 0 0 2px color-mix(in oklab,var(--primary) 28%, transparent); /* più sottile */
+}
 .chip{background:var(--surface-2);border:1px solid color-mix(in oklab, var(--text) 10%, transparent);padding:8px 10px;border-radius:999px;font-size:.9rem}
 .btn{background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;box-shadow:var(--shadow)}
 .btn:active{transform:translateY(1px)}
@@ -83,3 +99,17 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 @media (max-width:860px){.modal__body{grid-template-columns:1fr}}
 .close{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--muted)}
 .small{font-size:.86rem;color:var(--muted)}
+.searchwrap{
+  position:relative;
+}
+.searchwrap .icon{
+  position:absolute;left:10px;top:50%;translate:0 -50%;
+  font-size:18px;opacity:.6;pointer-events:none;
+}
+.searchwrap .input{ padding-left:36px; padding-right:36px; }
+.searchwrap .clear{
+  position:absolute;right:6px;top:50%;translate:0 -50%;
+  width:32px;height:32px;border-radius:999px;border:none;background:transparent;
+  color:var(--muted);cursor:pointer;
+}
+.searchwrap .clear:active{transform:translate(0,-48%)}
