@@ -276,12 +276,13 @@ if (qClear) qClear.hidden = !q?.value;
     e.preventDefault();
     if (!q) return;
 
-  });
- q.value = '';
+
+    q.value = '';
     state.q = '';
     qClear.hidden = true;
     update();
     q.focus();
+    });
   // Filters
   genre?.addEventListener('change', (e) => { state.genre = e.target.value; update(); });
   players?.addEventListener('change', (e) => { state.players = e.target.value; update(); });
