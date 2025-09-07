@@ -7,57 +7,77 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main>
-    <header class="header">
-      <h1>La mia collezione</h1>
-      <div class="meta"><span id="count">0</span> giochi</div>
-    </header>
-
-    <section class="filters">
-      <input id="search" class="input" placeholder="Cerca titolo / tag..." />
-
-      <div class="row">
-        <label class="field">
-          <span>Giocatori</span>
-          <select id="players" class="select">
-            <option value="">Tutti</option>
-            <option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option>
-            <option value="5">5</option><option value="6">6</option>
-            <option value="7">7</option><option value="8">8</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Durata max</span>
-          <select id="maxTime" class="select">
-            <option value="">Nessun limite</option>
-            <option value="30">30’</option>
-            <option value="45">45’</option>
-            <option value="60">60’</option>
-            <option value="90">90’</option>
-            <option value="120">120’</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Ordina per</span>
-          <select id="sortBy" class="select">
-            <option value="title_asc">Titolo (A→Z)</option>
-            <option value="time_asc">Durata (cresc.)</option>
-            <option value="players_desc">Numero giocatori (decresc.)</option>
-          </select>
-        </label>
+  <header class="header">
+    <div class="header__inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <span>Boardgames</span>
       </div>
-    </section>
+      <div class="small">UI v1 • zero-backend</div>
+    </div>
+  </header>
 
-    <section id="grid" class="grid"></section>
-    <p id="empty" hidden>Nessun gioco trovato.</p>
+  <main class="container">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input id="q" class="input" placeholder="Cerca titolo o genere…" aria-label="Cerca">
+      <div class="filters">
+        <select id="genre">
+          <option value="">Genere</option>
+          <option>Strategy</option><option>Family</option><option>Party</option>
+          <option>Eurogame</option><option>Card</option><option>Abstract</option>
+        </select>
+        <select id="players">
+          <option value="">Giocatori</option>
+          <option value="1">1+</option><option value="2">2+</option>
+          <option value="3">3+</option><option value="4">4+</option><option value="5">5+</option>
+        </select>
+        <select id="duration">
+          <option value="">Durata</option>
+          <option value="30">≤ 30′</option>
+          <option value="60">≤ 60′</option>
+          <option value="90">≤ 90′</option>
+          <option value="120">≤ 120′</option>
+        </select>
+        <select id="complexity">
+          <option value="">Difficoltà</option>
+          <option value="1">Leggero (≤1.5)</option>
+          <option value="2">Medio (≤2.5)</option>
+          <option value="3">Tosto (≤3.5)</option>
+          <option value="4">Hard (≤4.5)</option>
+        </select>
+        <select id="sort">
+          <option value="rating-desc">Ordina: Voto BGG ⬇</option>
+          <option value="title-asc">Titolo A→Z</option>
+          <option value="duration-asc">Durata ↑</option>
+          <option value="complexity-asc">Difficoltà ↑</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <section id="grid" class="grid" aria-live="polite"></section>
   </main>
 
-  <!-- SDK Supabase + config + app (UNA sola volta, in questo ordine) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
+  <!-- Modal scheda -->
+  <dialog id="gameModal">
+    <div class="modal__header">
+      <strong id="mTitle"></strong>
+      <button class="close" id="mClose" aria-label="Chiudi">×</button>
+    </div>
+    <div class="modal__body">
+      <div id="mCover" style="aspect-ratio:4/3;background:#222 center/cover no-repeat;border-radius:14px"></div>
+      <div>
+        <div class="meta" id="mMeta"></div>
+        <p id="mDesc" class="small"></p>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <a id="mBgg" class="btn" target="_blank" rel="noopener">Apri su BGG</a>
+          <a id="mRules" class="link" target="_blank" rel="noopener">Regole (PDF)</a>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <script src="app.js"></script>
 </body>
 </html>
