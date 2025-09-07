@@ -266,7 +266,7 @@ async function boot() {
   const complexity = $('#complexity'), sort = $('#sort');
 
   // Search & Clear
-if (qClear) qClear.hidden = !q?.value;
+  if (qClear) qClear.hidden = !q?.value;
   if (q && qClear) q.addEventListener('input', (e) => {
     state.q = e.target.value;
     qClear.hidden = !e.target.value;
@@ -275,8 +275,6 @@ if (qClear) qClear.hidden = !q?.value;
   if (qClear) qClear.addEventListener('click', (e) => {
     e.preventDefault();
     if (!q) return;
-
-
     q.value = '';
     state.q = '';
     qClear.hidden = true;
