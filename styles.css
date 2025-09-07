@@ -1,12 +1,11 @@
 /* ===== Design tokens ===== */
 :root{
-  /* colors - light */
-  --bg: #FAF7F2;
-  --surface: #FFFFFF;
+  --bg:#FAF7F2;
+  --surface:#FFFFFF;
   --surface-2:#F3EEE8;
   --text:#1F2937;
   --muted:#6B7280;
-  --primary:#E85D04;   /* arancio caldo */
+  --primary:#E85D04;
   --primary-700:#C94A02;
   --ok:#16a34a;
   --warn:#f59e0b;
@@ -30,11 +29,18 @@
   }
 }
 
-/* ===== Layout ===== */
+/* ===== Base ===== */
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 Inter,system-ui,Segoe UI,Roboto,Arial}
+html,body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:16px/1.45 Inter,system-ui,Segoe UI,Roboto,Arial;
+  overflow-x:hidden;              /* elimina scroll orizzontale globale */
+}
 a{color:inherit}
 
+/* ===== Header ===== */
 .header{
   position:sticky;top:0;z-index:10;
   backdrop-filter:saturate(1.2) blur(6px);
@@ -45,71 +51,73 @@ a{color:inherit}
 .brand{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.2px}
 .brand .logo{width:28px;height:28px;border-radius:8px;background:var(--primary);box-shadow:0 0 0 3px color-mix(in oklab, var(--primary) 30%, transparent) inset}
 
+/* ===== Container ===== */
 .container{max-width:var(--container);margin:auto;padding:18px}
 
-/* ===== Toolbar (search + filtri + sort) =====
-   Forziamo 2 righe SEMPRE: ricerca in alto (1fr), filtri sotto */
+/* ===== Toolbar ===== */
+/* 2 righe fisse: 1) ricerca  2) filtri con wrap, senza overflow */
 .toolbar{
   display:grid;
-  grid-template-columns: 1fr;   /* una colonna: evita overflow su desktop */
-  row-gap: 12px;
+  grid-template-columns:1fr;
+  row-gap:12px;
   margin:8px 0 16px;
+  min-width:0;
 }
 
-/* Filtri a capo quando serve, con spaziature uniformi */
 .filters{
   display:flex;
-  flex-wrap:wrap;               /* va a capo su desktop e mobile */
+  flex-wrap:wrap;            /* va a capo su desktop e mobile */
   gap:8px;
   align-items:center;
+  min-width:0;
+  width:100%;
 }
 
-/* stile coerente per input/select dei filtri */
+/* ===== Input/Select ===== */
+.input,
 select{
   background:var(--surface);
   border:1px solid color-mix(in oklab, var(--text) 12%, transparent);
   color:var(--text);
-  border-radius:12px;
   height:44px;
-  padding:0 12px;
-  appearance:none;
+  border-radius:12px;
+  padding:10px 12px;
+  transition:border var(--trans), box-shadow var(--trans), background-color var(--trans), color var(--trans);
+  min-width:0;
 }
+
+/* select: forza stile coerente (niente bianco fisso su mobile) */
+select{
+  -webkit-appearance:none;
+  appearance:none;
+  /* freccia personalizzata che usa currentColor (adatta tema) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath fill='%23{c}' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"
+  );
+  /* sostituiamo {c} con il valore esadecimale di currentColor via CSS 'filter' non possibile:
+     usiamo il trucco: color: var(--text) e SVG nero; poi invertiamo? meglio: usiamo il carattere ▾ via gradient */
+  background-image:
+    linear-gradient(transparent,transparent),
+    linear-gradient(transparent,transparent),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='currentColor' d='M5.5 7.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position: right 12px center, right 12px center, right 12px center;
+  padding-right:40px;  /* spazio per la freccia */
+}
+
+.input::placeholder{color:var(--muted)}
+.input:focus,
 select:focus{
   outline:none;
   border-color:var(--primary);
   box-shadow:0 0 0 2px color-mix(in oklab,var(--primary) 28%, transparent);
 }
 
-@media (max-width:720px){
-  /* su mobile restano due righe; nessuno scroll orizzontale */
-  .filters{gap:8px}
-}
-
-/* ===== Campo ricerca ===== */
-.input{
-  background:var(--surface);
-  border:1px solid color-mix(in oklab, var(--text) 12%, transparent);
-  padding:10px 12px;
-  height:44px;                 /* fisso, comodo al tatto */
-  border-radius:12px;
-  transition:border var(--trans), box-shadow var(--trans);
-  color:var(--text);
-  width:100%;
-  appearance:none;
-}
-.input::placeholder{color:var(--muted)}
-.input:focus{
-  outline:none;
-  border-color:var(--primary);
-  box-shadow:0 0 0 2px color-mix(in oklab,var(--primary) 28%, transparent); /* più sottile */
-}
-
-/* Chip e bottoni generici */
+/* ===== Chip/Buttons ===== */
 .chip{background:var(--surface-2);border:1px solid color-mix(in oklab, var(--text) 10%, transparent);padding:8px 10px;border-radius:999px;font-size:.9rem}
 .btn{background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;box-shadow:var(--shadow)}
 .btn:active{transform:translateY(1px)}
 
-/* ===== Grid cards ===== */
+/* ===== Grid ===== */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--gap)}
 .card{
   background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column
@@ -125,7 +133,7 @@ select:focus{
 .card__actions{display:flex;gap:8px;padding:12px}
 .link{flex:1;text-align:center;border:1px solid color-mix(in oklab,var(--text) 15%, transparent);border-radius:12px;padding:10px;cursor:pointer;background:var(--surface-2)}
 
-/* ===== Modal scheda (native <dialog>) ===== */
+/* ===== Dialog ===== */
 dialog{border:none;border-radius:18px;background:var(--surface);color:var(--text);box-shadow:var(--shadow);max-width:860px;width:96%}
 dialog::backdrop{background:rgba(0,0,0,.55)}
 .modal__header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid color-mix(in oklab,var(--text) 12%, transparent)}
@@ -134,8 +142,8 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 .close{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--muted)}
 .small{font-size:.86rem;color:var(--muted)}
 
-/* ===== Ricerca: wrapper con icona e bottone clear ===== */
-.searchwrap{ position:relative; }
+/* ===== Ricerca: icona e X ===== */
+.searchwrap{ position:relative; min-width:0; }
 .searchwrap .icon{
   position:absolute; left:10px; top:50%;
   transform: translateY(-50%);
@@ -143,10 +151,9 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 }
 .searchwrap .input{ padding-left:36px; padding-right:36px; }
 
-/* bottone X */
 .searchwrap .clear{
   position:absolute; right:6px; top:50%;
-  transform: translateY(-50%);                /* sempre centrato */
+  transform: translateY(-50%);
   width:32px; height:32px; border-radius:999px; border:none;
   background:transparent; color:var(--muted); cursor:pointer;
   -webkit-tap-highlight-color: color-mix(in oklab, var(--primary) 20%, transparent);
@@ -163,3 +170,12 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
   transform: translateY(-50%) scale(0.9);
   background-color: color-mix(in oklab, var(--primary) 12%, transparent);
 }
+
+/* ===== Media queries add-on ===== */
+/* nessuna larghezza minima forzata: tutto si adatta e va a capo */
+@media (max-width:720px){
+  .filters{gap:8px}
+}
+
+/* Utility: in caso di contenuti larghi imprevisti, non far spuntare scrollbar */
+.toolbar, .filters, .container, .grid { min-width:0; }
