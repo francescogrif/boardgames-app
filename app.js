@@ -14,14 +14,6 @@ const state = {
   sort: 'rating-desc',
 };
 
-const debounce = (fn, ms = 180) => {
-  let t;
-  return (...a) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...a), ms);
-  };
-};
-
 // ===== Mapping: input -> formato UI canonico =====
 function mapGame(g) {
   const title = g.title || g.name || g.titolo || 'Senza titolo';
@@ -219,41 +211,17 @@ async function boot() {
   const complexity = $('#complexity');
   const sort = $('#sort');
 
-  // ---- Search (debounced)
-  if (q) q.addEventListener('input', debounce((e) => { state.q = e.target.value; update(); }, 160));
+  // ---- Search (immediata, niente debounce)
+  if (q) q.addEventListener('input', (e) => { state.q = e.target.value; update(); });
 
-  // ---- Clear button: pointerdown + click with preventDefault
-  const clearHandler = (evt) => {
-    evt.preventDefault();
-    evt.stopPropagation();
+  // ---- Clear: click semplice e affidabile
+  if (qClear) qClear.addEventListener('click', (e) => {
+    e.preventDefault();
     if (!q) return;
     q.value = '';
     state.q = '';
     update();
     q.focus();
-  };
-  if (qClear) {
-    qClear.addEventListener('pointerdown', clearHandler);
-    qClear.addEventListener('click', clearHandler);
-  }
-
-  // ---- Keyboard shortcuts
-  window.addEventListener('keydown', (e) => {
-    // Esc pulisce
-    if (e.key === 'Escape' && document.activeElement === q) {
-      e.preventDefault();
-      if (q && q.value) {
-        q.value = '';
-        state.q = '';
-        update();
-      }
-    }
-    // Ctrl/Cmd+K mette focus sulla ricerca
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      q?.focus();
-      q?.select();
-    }
   });
 
   // ---- Filters
